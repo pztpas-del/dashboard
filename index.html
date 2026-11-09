@@ -51,6 +51,21 @@ button{cursor:pointer}
 .btn.on{border-color:var(--accent);color:var(--accent)}
 .btn svg{width:16px;height:16px}
 .ico{width:32px;height:32px;padding:0;justify-content:center}
+#syncBtn{position:relative}
+.dot{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;display:none;box-shadow:0 0 0 2px var(--panel)}
+.dot.ok{display:block;background:#3ddc84}
+.dot.busy{display:block;background:#ffc94d;animation:blink 1s infinite}
+.dot.err{display:block;background:var(--danger)}
+.dot.offline{display:block;background:var(--muted)}
+@keyframes blink{50%{opacity:.35}}
+.syncBox{display:grid;gap:10px;padding:14px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.syncBox h4{margin:0;font-size:15px}
+.syncState{font-size:13px;color:var(--muted)}
+.syncState b{color:var(--text);font-weight:600}
+details summary{cursor:pointer;color:var(--muted);font-size:13px}
+details[open] summary{margin-bottom:10px}
+input[type=password]{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;outline:none;color:var(--text)}
+.syncBox input[type=text]{background:var(--bg2)}
 
 /* ---------- grid ---------- */
 main{flex:1;min-height:0;padding:var(--gap);overflow:auto}
@@ -179,7 +194,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
   <button class="btn primary" id="addBtn" title="Добавить ссылку (N)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ссылка</button>
   <button class="btn" id="editBtn" title="Режим раскладки: перетаскивание и размеры (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="hideSm">Раскладка</span></button>
   <button class="btn ico" id="settingsBtn" title="Настройки экрана"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
-  <button class="btn ico" id="syncBtn" title="Перенос на другое устройство"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="14" height="10" rx="2"/><rect x="15" y="9" width="7" height="12" rx="1.5"/><path d="M6 18h6"/></svg></button>
+  <button class="btn ico" id="syncBtn" title="Синхронизация и перенос"><span class="dot" id="syncDot"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="14" height="10" rx="2"/><rect x="15" y="9" width="7" height="12" rx="1.5"/><path d="M6 18h6"/></svg></button>
   <button class="btn ico" id="kioskBtn" title="Полный экран без интерфейса (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </header>
 
@@ -235,8 +250,34 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 
 <!-- sync dialog -->
 <dialog id="syncDlg"><form class="dlg" method="dialog">
-  <h3>Перенос на другое устройство</h3>
-  <div class="note">Всё хранится в этом браузере. Чтобы открыть те же ссылки на телевизоре, телефоне или другом компьютере — скопируйте ссылку и откройте её там. Она содержит всю раскладку.</div>
+  <h3>Синхронизация и перенос</h3>
+  <div class="syncBox">
+    <h4>Синхронизация через GitHub</h4>
+    <div class="syncState" id="syncState"></div>
+    <div class="actions" id="syncOnActions" style="justify-content:flex-start">
+      <button class="btn primary" type="button" id="syncNow">Синхронизировать сейчас</button>
+      <button class="btn" type="button" id="syncOff">Отключить</button>
+    </div>
+    <div id="syncSetup" style="display:grid;gap:10px">
+      <div id="notesOffer" style="display:grid;gap:8px">
+        <button class="btn primary" type="button" id="useNotes" style="justify-self:start">Подключить, как в «Заметках»</button>
+        <div class="note">На этом устройстве уже подключены «Заметки». Раскладка будет храниться в том же закрытом хранилище, отдельным файлом <code>.dashboard/layout.dash</code> — заметкам он не мешает. Новый токен не нужен.</div>
+      </div>
+      <details id="manualBox">
+        <summary>Ввести данные GitHub вручную</summary>
+        <div style="display:grid;gap:10px">
+          <div class="row">
+            <label>Имя пользователя<input type="text" id="ghOwner" placeholder="pztpas-del" autocomplete="off"></label>
+            <label>Хранилище<input type="text" id="ghRepo" placeholder="notes" autocomplete="off"></label>
+          </div>
+          <label>Токен<input type="password" id="ghToken" placeholder="github_pat_…" autocomplete="off"></label>
+          <div class="note">Нужен токен с доступом Contents: Read and write к этому хранилищу. Лучше закрытому — тогда ваши ссылки никто не увидит.</div>
+          <button class="btn primary" type="button" id="ghConnect" style="justify-self:start">Проверить и подключить</button>
+        </div>
+      </details>
+    </div>
+  </div>
+  <div class="note">Без синхронизации всё хранится только в этом браузере. Перенести раскладку можно и вручную: скопируйте ссылку и откройте её на другом устройстве — в ней вся раскладка.</div>
   <div class="actions" style="justify-content:flex-start">
     <button class="btn primary" type="button" id="copyLink">Скопировать ссылку с раскладкой</button>
     <button class="btn" type="button" id="dlJson">Скачать файл</button>
@@ -266,7 +307,13 @@ const DEFAULT = () => ({ brand: 'Мой экран', active: 0, target: 'new', b
 
 // ---------- storage ----------
 function safeGet(){ try { return localStorage.getItem(KEY); } catch { return null; } }
-function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+// local = only this device's view changed (e.g. which screen is open) — nothing to send to GitHub
+function save(local = false){
+  if (!local) state.updatedAt = Date.now();
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  if (!local) { if (ready) markDirty(); else dirtyBeforeReady = true; }
+}
+let ready = false, dirtyBeforeReady = false;   // sync code is set up further down the page
 function encode(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
 function decode(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(s)))); }
 function valid(o){ return o && Array.isArray(o.boards) && o.boards.length; }
@@ -364,7 +411,7 @@ function renderTabs(){
     const t = document.createElement('button');
     t.className = 'tab' + (i === state.active ? ' on' : '');
     t.textContent = b.name; t.title = `${b.name} (${i + 1})`;
-    t.onclick = () => { state.active = i; save(); renderAll(); };
+    t.onclick = () => { state.active = i; save(true); renderAll(); };
     tabsEl.append(t);
   });
 }
@@ -479,6 +526,7 @@ function openPanelDlg(p = null){
   $('#panelDlgTitle').textContent = p ? 'Изменить ссылку' : 'Новая ссылка';
   pForm.url.value = p?.url || ''; pForm.title.value = p?.title || '';
   pForm.w.value = p?.w || 1; pForm.h.value = p?.h || 1; pForm.icon.value = p?.icon || '';
+  pDlg.returnValue = '';   // Esc keeps the previous returnValue — reset so Esc never counts as "Save"
   pDlg.showModal(); pForm.url.focus();
 }
 pDlg.addEventListener('close', () => {
@@ -503,6 +551,7 @@ $('#settingsBtn').onclick = () => {
   sForm.name.value = b.name; sForm.cols.value = b.cols; sForm.rows.value = b.rows;
   sForm.gap.value = b.gap ?? 14; sForm.fit.value = b.fit || 'fit'; sForm.brand.value = state.brand || '';
   sForm.target.value = state.target || 'new';
+  sDlg.returnValue = '';
   sDlg.showModal();
 };
 sDlg.addEventListener('close', () => {
@@ -527,7 +576,7 @@ document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.close
 
 // ---------- sync dialog ----------
 const yDlg = $('#syncDlg');
-$('#syncBtn').onclick = () => { $('#jsonBox').value = JSON.stringify(state, null, 2); yDlg.showModal(); };
+$('#syncBtn').onclick = () => { $('#jsonBox').value = JSON.stringify(state, null, 2); renderSyncUI(); yDlg.showModal(); };
 $('#copyLink').onclick = async () => {
   const link = location.origin + location.pathname + '#cfg=' + encode(state);
   try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована — откройте её на другом устройстве'); }
@@ -575,9 +624,180 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'n' || e.key === 'т') openPanelDlg();
   else if (e.key === 'e' || e.key === 'у') toggleEdit();
   else if (e.key === 'f' || e.key === 'а') setKiosk(!document.body.classList.contains('kiosk'));
-  else if (/^[1-9]$/.test(e.key) && state.boards[e.key - 1]) { state.active = e.key - 1; save(); renderAll(); }
+  else if (/^[1-9]$/.test(e.key) && state.boards[e.key - 1]) { state.active = e.key - 1; save(true); renderAll(); }
 });
 window.addEventListener('resize', applyLayout);
+
+// ---------- GitHub sync ----------
+// The whole layout is one JSON file in a GitHub repository. Each device keeps
+// the file's last known version (sha) and whether it has unsent changes (dirty).
+// If two devices changed the layout before seeing each other's change, the most
+// recent edit wins and the other version is kept on this device as a backup.
+const SYNC_KEY = 'dash.sync', META_KEY = 'dash.syncmeta', BACKUP_KEY = 'dash.backup';
+const FILE = '.dashboard/layout.dash';
+const readJSON = k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+const writeJSON = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+let meta = readJSON(META_KEY) || { sha: null, dirty: false, last: 0 };
+let syncStatus = { kind: 'off', text: '' };
+
+const notesCfg = () => { const n = readJSON('notes.sync'); return n && n.owner && n.repo && n.token ? n : null; };
+function syncCfg(){
+  const c = readJSON(SYNC_KEY);
+  if (!c) return null;
+  if (c.useNotes) {
+    const n = notesCfg();   // read live, so a renewed token in «Заметки» is picked up automatically
+    return n ? { owner: n.owner, repo: n.repo, branch: n.branch || 'main', token: n.token, api: n.api, useNotes: true } : { broken: true, useNotes: true };
+  }
+  return c;
+}
+const saveMeta = () => writeJSON(META_KEY, meta);
+function markDirty(){ if (!readJSON(SYNC_KEY)) return; meta.dirty = true; saveMeta(); clearTimeout(pushTimer); pushTimer = setTimeout(requestSync, 1200); }
+let pushTimer;
+
+const b64enc = s => { const b = new TextEncoder().encode(s); let bin = ''; for (const x of b) bin += String.fromCharCode(x); return btoa(bin); };
+const b64dec = s => { const bin = atob(s.replace(/\s/g, '')); const b = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return new TextDecoder().decode(b); };
+
+async function gh(c, method, path, body){
+  const base = (c.api || 'https://api.github.com').replace(/\/+$/, '');
+  let res;
+  try {
+    res = await fetch(`${base}/repos/${encodeURIComponent(c.owner)}/${encodeURIComponent(c.repo)}${path}`, {
+      method, cache: 'no-store',
+      headers: { Accept: 'application/vnd.github+json', Authorization: `Bearer ${c.token}`, 'X-GitHub-Api-Version': '2022-11-28',
+        ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch { const e = new Error('Нет связи с GitHub'); e.code = 'offline'; throw e; }
+  if (res.ok) return res.json();
+  let msg = ''; try { msg = (await res.json()).message || ''; } catch {}
+  const e = new Error(
+    res.status === 401 ? 'GitHub не принял токен: он неверный или истёк' :
+    res.status === 403 && /rate limit/i.test(msg) ? 'GitHub временно ограничил запросы' :
+    res.status === 403 ? 'У токена нет права менять это хранилище (нужно Contents: Read and write)' :
+    res.status === 404 ? 'Не найдено' : `GitHub ответил ошибкой ${res.status}. ${msg}`);
+  e.status = res.status; throw e;
+}
+const filePath = () => '/contents/' + FILE.split('/').map(encodeURIComponent).join('/');
+
+async function getRemote(c){
+  try {
+    const r = await gh(c, 'GET', `${filePath()}?ref=${encodeURIComponent(c.branch || 'main')}`);
+    return { sha: r.sha, data: JSON.parse(b64dec(r.content)) };
+  } catch (e) { if (e.status === 404) return null; throw e; }
+}
+function payload(){ const { active, ...rest } = state; return JSON.stringify(rest, null, 2); }
+async function putRemote(c){
+  const sentAt = state.updatedAt;
+  const body = { message: 'Дашборд: раскладка', content: b64enc(payload()), branch: c.branch || 'main' };
+  if (meta.sha) body.sha = meta.sha;
+  const r = await gh(c, 'PUT', filePath(), body);
+  meta.sha = r.content.sha;
+  if (state.updatedAt === sentAt) meta.dirty = false;  // otherwise something changed while sending: send again next time
+  saveMeta();
+  if (meta.dirty) setTimeout(requestSync, 300);
+}
+function applyRemote(data){
+  if (!valid(data)) return;
+  const active = state.active || 0;
+  state = { ...data, active: Math.min(active, data.boards.length - 1) };
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  renderAll();
+}
+
+async function syncOnce(){
+  const c = syncCfg();
+  if (!c) return setSync('off');
+  if (c.broken) return setSync('err', '«Заметки» на этом устройстве больше не подключены к GitHub');
+  setSync('busy', 'Синхронизация…');
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const remote = await getRemote(c);
+    if (!remote) { if (meta.dirty || state.boards.some(b => b.panels.length)) { meta.sha = null; await putRemote(c); } }
+    else if (remote.sha === meta.sha) { if (meta.dirty) { try { await putRemote(c); } catch (e) { if (e.status === 409 || e.status === 422) continue; throw e; } } }
+    else if (meta.dirty && (state.updatedAt || 0) > (remote.data.updatedAt || 0)) {
+      // both changed, ours is newer: keep theirs as a backup, send ours
+      writeJSON(BACKUP_KEY, { at: Date.now(), data: remote.data });
+      meta.sha = remote.sha;
+      try { await putRemote(c); } catch (e) { if (e.status === 409 || e.status === 422) continue; throw e; }
+    } else {
+      if (meta.dirty) writeJSON(BACKUP_KEY, { at: Date.now(), data: JSON.parse(payload()) });
+      applyRemote(remote.data);
+      meta.sha = remote.sha; meta.dirty = false; saveMeta();
+    }
+    meta.last = Date.now(); saveMeta();
+    return setSync('ok', 'Всё сохранено в GitHub');
+  }
+  throw new Error('Раскладка всё время меняется на других устройствах — повторите позже');
+}
+let running = null, again = false;
+function requestSync(){
+  if (running) { again = true; return running; }
+  running = syncOnce()
+    .catch(e => setSync(e.code === 'offline' ? 'offline' : 'err', e.code === 'offline' ? 'Нет интернета — изменения отправятся позже' : e.message))
+    .finally(() => { running = null; if (again) { again = false; requestSync(); } });
+  return running;
+}
+function setSync(kind, text = ''){
+  syncStatus = { kind, text };
+  const dot = $('#syncDot'); dot.className = 'dot' + (kind === 'off' ? '' : ' ' + kind);
+  $('#syncBtn').title = kind === 'off' ? 'Синхронизация и перенос' : 'Синхронизация: ' + text;
+  if (yDlg.open) renderSyncUI();
+}
+function renderSyncUI(){
+  const c = readJSON(SYNC_KEY), on = !!c;
+  $('#syncOnActions').style.display = on ? '' : 'none';
+  $('#syncSetup').style.display = on ? 'none' : 'grid';
+  $('#notesOffer').style.display = !on && notesCfg() ? 'grid' : 'none';
+  $('#manualBox').open = !notesCfg();
+  const where = on ? (c.useNotes ? (notesCfg() ? `${notesCfg().owner}/${notesCfg().repo}` : '«Заметки»') : `${c.owner}/${c.repo}`) : '';
+  const when = meta.last ? new Date(meta.last).toLocaleString('ru-RU', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+  const el = $('#syncState'); el.innerHTML = '';
+  const line = (t, bold) => { const d = document.createElement('div'); if (bold) { const b = document.createElement('b'); b.textContent = bold; d.append(b, ' '); } d.append(t); el.append(d); };
+  if (!on) line('Выключена. Включите — и раскладка будет одинаковой на всех ваших устройствах, а при очистке браузера не пропадёт.');
+  else {
+    line(where, 'Подключено:');
+    line(syncStatus.text || 'ожидание', 'Состояние:');
+    if (when) line(when, 'Последняя синхронизация:');
+  }
+}
+async function connect(cfg){
+  setSync('busy', 'Проверка…');
+  try {
+    const repo = await gh(cfg, 'GET', '');
+    if (repo.permissions && repo.permissions.push === false) throw new Error('Токен может только читать хранилище — нужно Contents: Read and write');
+    const remote = await getRemote(cfg);
+    const localHas = state.boards.some(b => b.panels.length);
+    meta = { sha: null, dirty: false, last: 0 };
+    if (remote && valid(remote.data)) {
+      const takeRemote = !localHas || confirm('На GitHub уже есть раскладка.\n\nОК — загрузить её на это устройство (то, что здесь сейчас, сохранится как резервная копия).\nОтмена — заменить её раскладкой с этого устройства.');
+      meta.sha = remote.sha;
+      if (takeRemote) { if (localHas) writeJSON(BACKUP_KEY, { at: Date.now(), data: JSON.parse(payload()) }); applyRemote(remote.data); }
+      else meta.dirty = true;
+    } else meta.dirty = localHas;
+    writeJSON(SYNC_KEY, cfg.useNotes ? { useNotes: true } : { owner: cfg.owner, repo: cfg.repo, branch: cfg.branch || 'main', token: cfg.token });
+    saveMeta();
+    await requestSync();
+    toast('Синхронизация включена');
+  } catch (e) {
+    setSync('off'); renderSyncUI();
+    toast(e.status === 404 ? 'Хранилище не найдено или у токена нет к нему доступа' : e.message);
+  }
+}
+$('#useNotes').onclick = () => { const n = notesCfg(); if (n) connect({ ...n, branch: n.branch || 'main', useNotes: true }); };
+$('#ghConnect').onclick = () => {
+  const owner = $('#ghOwner').value.trim(), repo = $('#ghRepo').value.trim(), token = $('#ghToken').value.trim();
+  if (!owner || !repo || !token) return toast('Заполните все три поля');
+  connect({ owner, repo, token, branch: 'main' }).then(() => { $('#ghToken').value = ''; });
+};
+$('#syncNow').onclick = () => requestSync();
+$('#syncOff').onclick = () => {
+  if (!confirm('Отключить синхронизацию на этом устройстве? Раскладка здесь останется, на GitHub — тоже.')) return;
+  writeJSON(SYNC_KEY, null); writeJSON(META_KEY, null); meta = { sha: null, dirty: false, last: 0 };
+  setSync('off'); renderSyncUI();
+};
+// pick up changes from other devices: on open, when returning to the tab, and every 2 minutes while visible
+document.addEventListener('visibilitychange', () => { if (!document.hidden) requestSync(); });
+window.addEventListener('online', () => requestSync());
+setInterval(() => { if (!document.hidden && readJSON(SYNC_KEY)) requestSync(); }, 120000);
 
 // ---------- clock & toast ----------
 function tick(){
@@ -589,6 +809,9 @@ tick(); setInterval(tick, 1000 * 15);
 let tt; function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600); }
 
 renderAll();
+ready = true;
+if (dirtyBeforeReady) markDirty();
+requestSync();
 })();
 </script>
 </body>
