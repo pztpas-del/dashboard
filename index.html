@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>Мой экран</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='12' height='12' rx='3' fill='%237c8cff'/%3E%3Crect x='18' y='2' width='12' height='12' rx='3' fill='%2335d0ba'/%3E%3Crect x='2' y='18' width='28' height='12' rx='3' fill='%23ff8a65'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#0b0d12; --bg2:#11141b; --panel:#151922; --panel2:#1b2030; --line:#262c3b;
+  --text:#e8ebf3; --muted:#8a93a8; --accent:#7c8cff; --accent2:#35d0ba; --danger:#ff6b6b;
+  --radius:16px; --gap:12px; --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:radial-gradient(1200px 600px at 10% -10%, #1a2040 0%, transparent 60%),
+             radial-gradient(900px 500px at 110% 110%, #0f2a2a 0%, transparent 55%), var(--bg);
+  color:var(--text); font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  display:flex; flex-direction:column; overflow:hidden;
+}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+
+/* ---------- top bar ---------- */
+.bar{
+  display:flex; align-items:center; gap:10px; padding:10px 14px; flex-wrap:wrap;
+  background:rgba(17,20,27,.7); backdrop-filter:blur(12px); border-bottom:1px solid var(--line);
+  transition:margin .3s ease, opacity .3s ease; z-index:5;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.2px}
+.logo{width:22px;height:22px;display:grid;grid-template-columns:1fr 1fr;gap:3px}
+.logo i{border-radius:3px;background:var(--accent)} .logo i:nth-child(2){background:var(--accent2)}
+.logo i:nth-child(3){grid-column:span 2;background:#ff8a65}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;max-width:50vw}
+.tab{border:1px solid transparent;background:transparent;padding:6px 12px;border-radius:10px;color:var(--muted);white-space:nowrap}
+.tab:hover{background:var(--panel)}
+.tab.on{background:var(--panel2);color:var(--text);border-color:var(--line)}
+.spacer{flex:1}
+.clock{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;line-height:1.15}
+.clock b{display:block;color:var(--text);font-size:18px;font-weight:600}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);
+  padding:7px 11px;border-radius:10px;transition:background .15s,border-color .15s,transform .1s;
+}
+.btn:hover{background:var(--panel2);border-color:#353d52}
+.btn:active{transform:scale(.97)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#0b0d12;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.on{border-color:var(--accent);color:var(--accent)}
+.btn svg{width:16px;height:16px}
+.ico{width:32px;height:32px;padding:0;justify-content:center}
+
+/* ---------- grid ---------- */
+main{flex:1;min-height:0;padding:var(--gap);overflow:auto}
+.grid{
+  display:grid; gap:var(--gap); height:100%;
+  grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));
+  grid-template-rows:repeat(var(--rows,2),minmax(0,1fr));
+  grid-auto-rows:minmax(0,1fr); grid-auto-flow:dense;
+}
+.grid.scroll{height:auto;grid-template-rows:none;grid-auto-rows:var(--rowh,320px)}
+.card{
+  position:relative; display:flex; flex-direction:column; min-width:0; min-height:0;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  box-shadow:var(--shadow); animation:pop .25s ease;
+}
+@keyframes pop{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:none}}
+.card.dragging{opacity:.4}
+.card.over{outline:2px dashed var(--accent);outline-offset:-2px}
+.chead{
+  display:flex;align-items:center;gap:8px;padding:6px 8px 6px 10px;min-height:36px;
+  background:linear-gradient(180deg,var(--panel2),var(--panel)); border-bottom:1px solid var(--line);
+}
+.chead img{width:16px;height:16px;border-radius:4px;flex:none}
+.ctitle{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:550}
+.cact{display:flex;gap:2px;opacity:.55;transition:opacity .15s}
+.card:hover .cact{opacity:1}
+.cact button{border:0;background:transparent;width:26px;height:26px;border-radius:7px;display:grid;place-items:center;color:var(--muted)}
+.cact button:hover{background:rgba(255,255,255,.07);color:var(--text)}
+.cact button.del:hover{color:var(--danger)}
+.cact svg{width:15px;height:15px}
+.cbody{position:relative;flex:1;min-height:0;background:#fff;overflow:hidden}
+.cbody iframe{position:absolute;inset:0;border:0;transform-origin:0 0;background:#fff}
+.hint{
+  position:absolute;inset:auto 8px 8px 8px;padding:8px 10px;border-radius:10px;font-size:12px;
+  background:rgba(11,13,18,.88);color:var(--muted);display:flex;gap:8px;align-items:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.card:hover .hint{opacity:1;pointer-events:auto}
+.hint a{color:var(--accent);margin-left:auto;white-space:nowrap}
+.sizer{display:none;gap:4px;align-items:center;font-size:12px;color:var(--muted)}
+body.edit .sizer{display:flex}
+body.edit .chead{cursor:grab}
+body.edit .cbody iframe{pointer-events:none}
+body.edit .cbody::after{content:"";position:absolute;inset:0;background:rgba(124,140,255,.06)}
+.sizer button{width:22px;height:22px;border:1px solid var(--line);background:var(--bg2);border-radius:6px;padding:0;line-height:1}
+
+/* maximized */
+.card.max{position:fixed;inset:10px;z-index:20;grid-column:auto!important;grid-row:auto!important}
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:19;display:none}
+.backdrop.on{display:block}
+
+/* kiosk: hide chrome */
+body.kiosk .bar{margin-top:-80px;opacity:0;pointer-events:none}
+body.kiosk .chead{position:absolute;top:0;left:0;right:0;z-index:2;opacity:0;transition:opacity .2s}
+body.kiosk .card:hover .chead{opacity:1}
+body.kiosk .hint{display:none}
+.kioskExit{position:fixed;right:12px;top:12px;z-index:30;display:none;opacity:.0;transition:opacity .2s}
+body.kiosk .kioskExit{display:inline-flex}
+body.kiosk .kioskExit:hover,body.kiosk.mouse .kioskExit{opacity:1}
+
+/* empty */
+.empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--muted)}
+.empty h2{color:var(--text);font-weight:600;margin:0 0 6px}
+.empty .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px;max-width:620px}
+
+/* ---------- dialogs ---------- */
+dialog{
+  border:1px solid var(--line);border-radius:18px;background:var(--bg2);color:var(--text);
+  padding:0;width:min(520px,calc(100vw - 32px));box-shadow:0 30px 80px rgba(0,0,0,.6);
+}
+dialog::backdrop{background:rgba(0,0,0,.55);backdrop-filter:blur(3px)}
+.dlg{padding:20px;display:grid;gap:14px}
+.dlg h3{margin:0;font-size:18px}
+label{display:grid;gap:6px;color:var(--muted);font-size:12.5px}
+input[type=text],input[type=url],input[type=number],select,textarea{
+  width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;outline:none;color:var(--text)
+}
+textarea{font:12px/1.4 ui-monospace,Consolas,monospace;min-height:160px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.note{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.toast{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);opacity:0;
+  background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;z-index:50;
+  transition:all .25s;pointer-events:none;box-shadow:var(--shadow)
+}
+.toast.on{opacity:1;transform:translateX(-50%)}
+
+@media (max-width:760px){
+  body{overflow:auto}
+  .grid,.grid.scroll{height:auto;grid-template-columns:1fr!important;grid-template-rows:none;grid-auto-rows:70vh}
+  .card{grid-column:auto!important;grid-row:auto!important}
+  .tabs{max-width:100%;order:5;width:100%}
+  .clock{display:none}
+  .hideSm{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="brand"><div class="logo"><i></i><i></i><i></i></div><span id="brandName">Мой экран</span></div>
+  <nav class="tabs" id="tabs"></nav>
+  <div class="spacer"></div>
+  <div class="clock"><b id="time">--:--</b><span id="date"></span></div>
+  <button class="btn primary" id="addBtn" title="Добавить панель (N)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Панель</button>
+  <button class="btn" id="editBtn" title="Режим раскладки: перетаскивание и размеры (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="hideSm">Раскладка</span></button>
+  <button class="btn ico" id="settingsBtn" title="Настройки экрана"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+  <button class="btn ico" id="syncBtn" title="Перенос на другое устройство"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="14" height="10" rx="2"/><rect x="15" y="9" width="7" height="12" rx="1.5"/><path d="M6 18h6"/></svg></button>
+  <button class="btn ico" id="kioskBtn" title="Полный экран без интерфейса (F)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+</header>
+
+<main id="main"><div class="grid" id="grid"></div></main>
+<div class="backdrop" id="backdrop"></div>
+<button class="btn kioskExit" id="kioskExit">Выйти из полноэкранного (Esc)</button>
+<div class="toast" id="toast"></div>
+
+<!-- panel dialog -->
+<dialog id="panelDlg"><form class="dlg" method="dialog" id="panelForm">
+  <h3 id="panelDlgTitle">Новая панель</h3>
+  <label>Адрес сайта<input type="text" name="url" placeholder="https://… или просто youtube.com/watch?v=…" required autocomplete="off"></label>
+  <label>Название (необязательно)<input type="text" name="title" placeholder="Подставится само"></label>
+  <div class="row">
+    <label>Ширина (колонок)<input type="number" name="w" min="1" max="12" value="1"></label>
+    <label>Высота (рядов)<input type="number" name="h" min="1" max="12" value="1"></label>
+    <label>Масштаб, %<input type="number" name="zoom" min="25" max="300" step="5" value="100"></label>
+    <label>Обновлять, мин<input type="number" name="refresh" min="0" max="1440" value="0" title="0 — не обновлять"></label>
+  </div>
+  <div class="note">Некоторые сайты (Google, ВК, Instagram, банки) запрещают показывать себя внутри других страниц — тогда панель будет пустой. Ссылки YouTube, Twitch, Google Карт и Google Документов превращаются во встраиваемый вид автоматически.</div>
+  <div class="actions">
+    <button class="btn" type="button" data-close="cancel">Отмена</button>
+    <button class="btn primary" value="ok">Сохранить</button>
+  </div>
+</form></dialog>
+
+<!-- settings dialog -->
+<dialog id="setDlg"><form class="dlg" method="dialog" id="setForm">
+  <h3>Настройки экрана</h3>
+  <label>Название экрана<input type="text" name="name"></label>
+  <div class="row">
+    <label>Колонок<input type="number" name="cols" min="1" max="12"></label>
+    <label>Рядов на экран<input type="number" name="rows" min="1" max="12"></label>
+    <label>Отступы, px<input type="number" name="gap" min="0" max="40"></label>
+  </div>
+  <label>Раскладка
+    <select name="fit">
+      <option value="fit">Вписать всё в один экран</option>
+      <option value="scroll">Прокручивать вниз, если не помещается</option>
+    </select>
+  </label>
+  <label>Заголовок дашборда<input type="text" name="brand"></label>
+  <div class="actions">
+    <button class="btn" type="button" data-close="delete" style="margin-right:auto;color:var(--danger)">Удалить экран</button>
+    <button class="btn" type="button" data-close="new">+ Новый экран</button>
+    <button class="btn" type="button" data-close="cancel">Отмена</button>
+    <button class="btn primary" value="ok">Сохранить</button>
+  </div>
+</form></dialog>
+
+<!-- sync dialog -->
+<dialog id="syncDlg"><form class="dlg" method="dialog">
+  <h3>Перенос на другое устройство</h3>
+  <div class="note">Всё хранится в этом браузере. Чтобы открыть те же панели на телевизоре, телефоне или другом компьютере — скопируйте ссылку и откройте её там. Она содержит всю раскладку.</div>
+  <div class="actions" style="justify-content:flex-start">
+    <button class="btn primary" type="button" id="copyLink">Скопировать ссылку с раскладкой</button>
+    <button class="btn" type="button" id="dlJson">Скачать файл</button>
+    <label class="btn" style="display:inline-flex;color:var(--text);font-size:14px">Загрузить файл<input type="file" id="upJson" accept=".json,application/json" hidden></label>
+  </div>
+  <label>Или вставьте/правьте настройки вручную (JSON)<textarea id="jsonBox" spellcheck="false"></textarea></label>
+  <div class="actions">
+    <button class="btn" value="cancel">Закрыть</button>
+    <button class="btn primary" type="button" id="applyJson">Применить текст</button>
+  </div>
+</form></dialog>
+
+<script>
+(() => {
+'use strict';
+const KEY = 'big-screen-dashboard-v1';
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+const ICONS = {
+  reload:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>',
+  open:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+  max:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>',
+  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>',
+  del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+};
+
+const DEFAULT = () => ({
+  brand: 'Мой экран', active: 0,
+  boards: [{ id: uid(), name: 'Главный', cols: 3, rows: 2, gap: 12, fit: 'fit', panels: [] }],
+});
+
+// ---------- storage ----------
+function safeGet(){ try { return localStorage.getItem(KEY); } catch { return null; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function encode(obj){ return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function decode(s){ s = s.replace(/-/g,'+').replace(/_/g,'/'); return JSON.parse(decodeURIComponent(escape(atob(s)))); }
+function valid(o){ return o && Array.isArray(o.boards) && o.boards.length; }
+
+let state = DEFAULT();
+try { const o = JSON.parse(safeGet()); if (valid(o)) state = o; } catch {}
+function loadFromHash(){
+  if (!location.hash.startsWith('#cfg=')) return false;
+  let ok = false;
+  try { const o = decode(location.hash.slice(5)); if (valid(o)) { state = o; ok = true; save(); } } catch {}
+  history.replaceState(null, '', location.pathname + location.search);
+  setTimeout(() => toast(ok ? 'Раскладка загружена из ссылки' : 'Ссылка повреждена — раскладка не изменилась'), 300);
+  return ok;
+}
+loadFromHash();
+window.addEventListener('hashchange', () => { if (loadFromHash()) renderAll(); });
+const board = () => state.boards[Math.min(state.active || 0, state.boards.length - 1)];
+
+// ---------- url smarts ----------
+function normalize(raw){
+  let u = raw.trim();
+  if (!/^[a-z]+:\/\//i.test(u)) u = 'https://' + u;
+  let url; try { url = new URL(u); } catch { return { src: u, link: u }; }
+  const host = url.hostname.replace(/^www\.|^m\./, '');
+  const link = url.href;
+  // YouTube
+  let yt = null;
+  if (host === 'youtu.be') yt = url.pathname.slice(1);
+  else if (host.endsWith('youtube.com')) {
+    if (url.searchParams.get('v')) yt = url.searchParams.get('v');
+    else { const m = url.pathname.match(/^\/(?:shorts|live|embed)\/([\w-]+)/); if (m) yt = m[1]; }
+    const list = url.searchParams.get('list');
+    if (!yt && list) return { src: `https://www.youtube.com/embed/videoseries?list=${list}`, link };
+  }
+  if (yt) return { src: `https://www.youtube.com/embed/${yt}?autoplay=1&mute=1&playsinline=1`, link };
+  // Twitch
+  if (host === 'twitch.tv') {
+    const ch = url.pathname.split('/').filter(Boolean)[0];
+    if (ch && ch !== 'videos') return { src: `https://player.twitch.tv/?channel=${ch}&parent=${location.hostname || 'localhost'}&muted=true`, link };
+  }
+  // Google Docs/Sheets/Slides -> preview
+  if (host === 'docs.google.com' && /\/(edit|view)/.test(url.pathname) && !url.pathname.includes('/forms/'))
+    return { src: link.replace(/\/(edit|view)[^?#]*.*/, '/preview'), link };
+  // Google Maps
+  if (host.startsWith('google.') && url.pathname.startsWith('/maps') && !url.searchParams.get('output'))
+    { url.searchParams.set('output', 'embed'); return { src: url.href, link }; }
+  // Vimeo
+  if (host === 'vimeo.com' && /^\/\d+/.test(url.pathname)) return { src: `https://player.vimeo.com/video${url.pathname}?muted=1&autoplay=1`, link };
+  return { src: link, link };
+}
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
+const favicon = u => `https://icons.duckduckgo.com/ip3/${hostOf(u)}.ico`;
+
+// ---------- render ----------
+const grid = $('#grid'), tabsEl = $('#tabs');
+const timers = new Map();
+
+function renderTabs(){
+  tabsEl.innerHTML = '';
+  if (state.boards.length < 2) { tabsEl.style.display = 'none'; return; }
+  tabsEl.style.display = '';
+  state.boards.forEach((b, i) => {
+    const t = document.createElement('button');
+    t.className = 'tab' + (i === state.active ? ' on' : '');
+    t.textContent = b.name; t.title = `${b.name} (${i + 1})`;
+    t.onclick = () => { state.active = i; save(); renderAll(); };
+    tabsEl.append(t);
+  });
+}
+
+function applyLayout(){
+  const b = board();
+  grid.style.setProperty('--cols', b.cols);
+  grid.style.setProperty('--rows', b.rows);
+  document.documentElement.style.setProperty('--gap', (b.gap ?? 12) + 'px');
+  // in fit mode, if panels overflow the defined rows, fall back to scroll automatically
+  const used = b.panels.reduce((s, p) => s + Math.min(p.w, b.cols) * p.h, 0);
+  const scroll = b.fit === 'scroll' || used > b.cols * b.rows;
+  grid.classList.toggle('scroll', scroll);
+  if (scroll) {
+    const mainH = $('#main').clientHeight - 2 * (b.gap ?? 12);
+    grid.style.setProperty('--rowh', Math.max(220, (mainH - (b.rows - 1) * (b.gap ?? 12)) / b.rows) + 'px');
+  }
+  $('#brandName').textContent = state.brand || 'Мой экран';
+  document.title = state.brand || 'Мой экран';
+}
+
+function renderAll(){
+  timers.forEach(clearInterval); timers.clear();
+  renderTabs(); applyLayout();
+  grid.innerHTML = '';
+  const b = board();
+  if (!b.panels.length) { grid.append(emptyState()); return; }
+  b.panels.forEach(p => grid.append(card(p)));
+}
+
+function emptyState(){
+  const d = document.createElement('div');
+  d.className = 'empty'; d.style.gridColumn = '1 / -1'; d.style.gridRow = '1 / -1';
+  d.innerHTML = `<div><h2>Здесь пока пусто</h2><div>Добавьте сайты, которые хотите держать перед глазами на большом экране.</div>
+    <div class="chips"></div><div style="margin-top:18px"><button class="btn primary">+ Добавить панель</button></div></div>`;
+  const examples = [
+    ['Погода', 'https://embed.windy.com/embed2.html?lat=55.75&lon=37.62&zoom=5&overlay=wind'],
+    ['Карта', 'https://www.openstreetmap.org/export/embed.html?bbox=37.35,55.57,37.87,55.92&layer=mapnik'],
+    ['Википедия', 'https://ru.m.wikipedia.org'],
+    ['Курсы валют', 'https://www.tradingview.com/embed-widget/market-overview/?locale=ru'],
+  ];
+  const chips = d.querySelector('.chips');
+  examples.forEach(([t, u]) => {
+    const c = document.createElement('button'); c.className = 'btn'; c.textContent = '+ ' + t;
+    c.onclick = () => { addPanel({ url: u, title: t }); };
+    chips.append(c);
+  });
+  d.querySelector('.btn.primary').onclick = () => openPanelDlg();
+  return d;
+}
+
+function card(p){
+  const b = board();
+  const el = document.createElement('section');
+  el.className = 'card'; el.dataset.id = p.id;
+  el.style.gridColumn = `span ${Math.min(p.w, b.cols)}`;
+  el.style.gridRow = `span ${p.h}`;
+  const { src, link } = normalize(p.url);
+  const title = p.title || hostOf(link);
+  el.innerHTML = `
+    <div class="chead" draggable="false">
+      <img alt="" src="${favicon(link)}" onerror="this.style.visibility='hidden'">
+      <div class="ctitle"></div>
+      <div class="sizer">
+        Ш <button data-a="w-">−</button><span class="sw">${p.w}</span><button data-a="w+">+</button>
+        &nbsp;В <button data-a="h-">−</button><span class="sh">${p.h}</span><button data-a="h+">+</button>
+      </div>
+      <div class="cact">
+        <button data-a="reload" title="Обновить">${ICONS.reload}</button>
+        <button data-a="open" title="Открыть в новой вкладке">${ICONS.open}</button>
+        <button data-a="max" title="Развернуть">${ICONS.max}</button>
+        <button data-a="edit" title="Изменить">${ICONS.edit}</button>
+        <button data-a="del" class="del" title="Удалить">${ICONS.del}</button>
+      </div>
+    </div>
+    <div class="cbody">
+      <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+        allow="autoplay; fullscreen; picture-in-picture; encrypted-media; clipboard-write; geolocation"
+        allowfullscreen></iframe>
+      <div class="hint">Пусто? Значит, сайт запретил встраивание. <a href="${link}" target="_blank" rel="noopener">Открыть отдельно →</a></div>
+    </div>`;
+  el.querySelector('.ctitle').textContent = title;
+  el.querySelector('.ctitle').title = link;
+  const frame = el.querySelector('iframe');
+  const z = (p.zoom || 100) / 100;
+  frame.style.width = (100 / z) + '%'; frame.style.height = (100 / z) + '%';
+  frame.style.transform = `scale(${z})`;
+  frame.src = src;
+
+  el.querySelector('.chead').addEventListener('click', e => {
+    const a = e.target.closest('button')?.dataset.a; if (!a) return;
+    if (a === 'reload') reload(frame, src);
+    if (a === 'open') window.open(link, '_blank', 'noopener');
+    if (a === 'max') toggleMax(el);
+    if (a === 'edit') openPanelDlg(p);
+    if (a === 'del') { if (confirm(`Удалить панель «${title}»?`)) { b.panels = b.panels.filter(x => x !== p); save(); renderAll(); } }
+    if (a[0] === 'w' || a[0] === 'h') {
+      const k = a[0], max = k === 'w' ? b.cols : 12;
+      p[k] = Math.max(1, Math.min(max, p[k] + (a[1] === '+' ? 1 : -1)));
+      save(); el.style.gridColumn = `span ${Math.min(p.w, b.cols)}`; el.style.gridRow = `span ${p.h}`;
+      el.querySelector('.sw').textContent = p.w; el.querySelector('.sh').textContent = p.h; applyLayout();
+    }
+  });
+  el.querySelector('.chead').addEventListener('dblclick', e => { if (!e.target.closest('button')) toggleMax(el); });
+
+  if (p.refresh > 0) timers.set(p.id, setInterval(() => reload(frame, src), p.refresh * 60000));
+  dnd(el, p);
+  return el;
+}
+
+function reload(frame, src){ frame.src = 'about:blank'; setTimeout(() => frame.src = src, 30); }
+
+let maxed = null;
+function toggleMax(el){
+  if (maxed && maxed !== el) maxed.classList.remove('max');
+  maxed = el.classList.toggle('max') ? el : null;
+  $('#backdrop').classList.toggle('on', !!maxed);
+}
+$('#backdrop').onclick = () => maxed && toggleMax(maxed);
+
+// ---------- drag & drop (edit mode) ----------
+let dragId = null;
+function dnd(el, p){
+  const head = el.querySelector('.chead');
+  head.addEventListener('pointerdown', () => { el.draggable = document.body.classList.contains('edit'); });
+  el.addEventListener('dragstart', e => { dragId = p.id; el.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; });
+  el.addEventListener('dragend', () => { el.classList.remove('dragging'); el.draggable = false; document.querySelectorAll('.over').forEach(x => x.classList.remove('over')); });
+  el.addEventListener('dragover', e => { if (dragId && dragId !== p.id) { e.preventDefault(); el.classList.add('over'); } });
+  el.addEventListener('dragleave', () => el.classList.remove('over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('over');
+    const ps = board().panels, from = ps.findIndex(x => x.id === dragId), to = ps.findIndex(x => x.id === p.id);
+    if (from < 0 || to < 0) return;
+    ps.splice(to, 0, ps.splice(from, 1)[0]); dragId = null; save(); renderAll();
+  });
+}
+
+// ---------- panel dialog ----------
+const pDlg = $('#panelDlg'), pForm = $('#panelForm');
+let editing = null;
+function openPanelDlg(p = null){
+  editing = p;
+  $('#panelDlgTitle').textContent = p ? 'Изменить панель' : 'Новая панель';
+  pForm.url.value = p?.url || ''; pForm.title.value = p?.title || '';
+  pForm.w.value = p?.w || 1; pForm.h.value = p?.h || 1;
+  pForm.zoom.value = p?.zoom || 100; pForm.refresh.value = p?.refresh || 0;
+  pDlg.showModal(); pForm.url.focus();
+}
+pDlg.addEventListener('close', () => {
+  if (pDlg.returnValue !== 'ok') return;
+  const f = pForm, data = {
+    url: f.url.value.trim(), title: f.title.value.trim(),
+    w: +f.w.value || 1, h: +f.h.value || 1, zoom: +f.zoom.value || 100, refresh: +f.refresh.value || 0,
+  };
+  if (!data.url) return;
+  if (editing) Object.assign(editing, data), save(), renderAll();
+  else addPanel(data);
+});
+function addPanel(d){
+  board().panels.push({ id: uid(), w: 1, h: 1, zoom: 100, refresh: 0, title: '', ...d });
+  save(); renderAll(); toast('Панель добавлена');
+}
+
+// ---------- settings dialog ----------
+const sDlg = $('#setDlg'), sForm = $('#setForm');
+$('#settingsBtn').onclick = () => {
+  const b = board();
+  sForm.name.value = b.name; sForm.cols.value = b.cols; sForm.rows.value = b.rows;
+  sForm.gap.value = b.gap ?? 12; sForm.fit.value = b.fit || 'fit'; sForm.brand.value = state.brand || '';
+  sDlg.showModal();
+};
+sDlg.addEventListener('close', () => {
+  const v = sDlg.returnValue, b = board();
+  if (v === 'ok') {
+    Object.assign(b, { name: sForm.name.value.trim() || b.name, cols: clamp(+sForm.cols.value, 1, 12),
+      rows: clamp(+sForm.rows.value, 1, 12), gap: clamp(+sForm.gap.value, 0, 40), fit: sForm.fit.value });
+    state.brand = sForm.brand.value.trim() || 'Мой экран';
+  } else if (v === 'new') {
+    state.boards.push({ id: uid(), name: 'Экран ' + (state.boards.length + 1), cols: 3, rows: 2, gap: 12, fit: 'fit', panels: [] });
+    state.active = state.boards.length - 1; toast('Новый экран создан');
+  } else if (v === 'delete') {
+    if (state.boards.length === 1) return toast('Это последний экран — его нельзя удалить');
+    if (!confirm(`Удалить экран «${b.name}» со всеми панелями?`)) return;
+    state.boards.splice(state.active, 1); state.active = 0;
+  } else return;
+  save(); renderAll();
+});
+const clamp = (n, a, z) => Math.max(a, Math.min(z, isNaN(n) ? a : n));
+
+// ---------- sync dialog ----------
+const yDlg = $('#syncDlg');
+$('#syncBtn').onclick = () => { $('#jsonBox').value = JSON.stringify(state, null, 2); yDlg.showModal(); };
+$('#copyLink').onclick = async () => {
+  const link = location.origin + location.pathname + '#cfg=' + encode(state);
+  try { await navigator.clipboard.writeText(link); toast('Ссылка скопирована — откройте её на другом устройстве'); }
+  catch { $('#jsonBox').value = link; toast('Скопируйте ссылку из поля ниже'); }
+};
+$('#dlJson').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
+  a.download = 'dashboard.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+$('#upJson').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try { importState(JSON.parse(await f.text())); yDlg.close(); } catch { toast('Не получилось прочитать файл'); }
+  e.target.value = '';
+};
+$('#applyJson').onclick = () => {
+  const t = $('#jsonBox').value.trim();
+  try {
+    const o = t.includes('#cfg=') ? decode(t.split('#cfg=')[1]) : JSON.parse(t);
+    importState(o); yDlg.close();
+  } catch { toast('В тексте ошибка — проверьте JSON'); }
+};
+function importState(o){ if (!valid(o)) throw 0; state = o; save(); renderAll(); toast('Раскладка загружена'); }
+
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close(b.dataset.close));
+
+// ---------- edit / kiosk ----------
+function toggleEdit(){ const on = document.body.classList.toggle('edit'); $('#editBtn').classList.toggle('on', on); if (on) toast('Тяните панели за заголовок, меняйте размер кнопками Ш/В'); }
+$('#editBtn').onclick = toggleEdit;
+$('#addBtn').onclick = () => openPanelDlg();
+
+function setKiosk(on){
+  document.body.classList.toggle('kiosk', on);
+  if (on && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+  if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  setTimeout(applyLayout, 350);
+}
+$('#kioskBtn').onclick = () => setKiosk(true);
+$('#kioskExit').onclick = () => setKiosk(false);
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && document.body.classList.contains('kiosk')) setKiosk(false); });
+let mt; document.addEventListener('mousemove', () => { document.body.classList.add('mouse'); clearTimeout(mt); mt = setTimeout(() => document.body.classList.remove('mouse'), 2000); });
+
+document.addEventListener('keydown', e => {
+  if (document.querySelector('dialog[open]') || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+  if (e.key === 'Escape') { if (maxed) toggleMax(maxed); else if (document.body.classList.contains('kiosk')) setKiosk(false); }
+  else if (e.key === 'n' || e.key === 'т') openPanelDlg();
+  else if (e.key === 'e' || e.key === 'у') toggleEdit();
+  else if (e.key === 'f' || e.key === 'а') setKiosk(!document.body.classList.contains('kiosk'));
+  else if (/^[1-9]$/.test(e.key) && state.boards[e.key - 1]) { state.active = e.key - 1; save(); renderAll(); }
+});
+window.addEventListener('resize', applyLayout);
+
+// ---------- clock & toast ----------
+function tick(){
+  const d = new Date();
+  $('#time').textContent = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  $('#date').textContent = d.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'long' });
+}
+tick(); setInterval(tick, 1000 * 15);
+let tt; function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(tt); tt = setTimeout(() => t.classList.remove('on'), 2600); }
+
+renderAll();
+})();
+</script>
+</body>
+</html>
