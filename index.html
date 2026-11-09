@@ -529,8 +529,8 @@ function openPanelDlg(p = null){
   pDlg.returnValue = '';   // Esc keeps the previous returnValue — reset so Esc never counts as "Save"
   pDlg.showModal(); pForm.url.focus();
 }
-pDlg.addEventListener('close', () => {
-  if (pDlg.returnValue !== 'ok') return;
+pDlg.addEventListener('choice', e => {
+  if (e.detail !== 'ok') return;
   const f = pForm, data = {
     url: f.url.value.trim(), title: f.title.value.trim(), icon: f.icon.value.trim(),
     w: clamp(+f.w.value, 1, 12), h: clamp(+f.h.value, 1, 12),
@@ -554,8 +554,8 @@ $('#settingsBtn').onclick = () => {
   sDlg.returnValue = '';
   sDlg.showModal();
 };
-sDlg.addEventListener('close', () => {
-  const v = sDlg.returnValue, b = board();
+sDlg.addEventListener('choice', e => {
+  const v = e.detail, b = board();
   if (v === 'ok') {
     Object.assign(b, { name: sForm.name.value.trim() || b.name, cols: clamp(+sForm.cols.value, 1, 12),
       rows: clamp(+sForm.rows.value, 1, 12), gap: clamp(+sForm.gap.value, 0, 40), fit: sForm.fit.value });
@@ -572,7 +572,11 @@ sDlg.addEventListener('close', () => {
   save(); renderAll();
 });
 const clamp = (n, a, z) => Math.max(a, Math.min(z, isNaN(n) ? a : n));
-document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => b.closest('dialog').close(b.dataset.close));
+// Dialog buttons report the choice right away as a 'choice' event (the dialog's own
+// 'close' event can arrive late or not at all in some browsers, and Esc reuses an old value).
+const choose = (dlg, v) => { dlg.close(v); dlg.dispatchEvent(new CustomEvent('choice', { detail: v })); };
+document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => choose(b.closest('dialog'), b.dataset.close));
+for (const f of [pForm, sForm]) f.addEventListener('submit', e => { e.preventDefault(); choose(f.closest('dialog'), e.submitter?.value || 'ok'); });
 
 // ---------- sync dialog ----------
 const yDlg = $('#syncDlg');
